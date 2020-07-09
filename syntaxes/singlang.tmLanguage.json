@@ -1,0 +1,63 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Sing",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#comments"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control.singlang",
+				"match": "\\b(null|true|false|void|mut|requires|namespace|var|let|const|type|map|weak|i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|c64|c128|int|float|string|bool|errcode|fn|pure|in|out|io|if|else|while|for|return|break|continue|run|bind|sizeof|dimof|as|typeswitch|switch|default|public|private|enum|struct|class|this|interface|static|implements|by|template|argument|volatile|throw|try|catch|step|case|flagset)\\b"
+			}]
+		},
+		"strings": {
+			"name": "string.quoted.double.singlang",
+			"begin": "\"",
+			"end": "\"|$",
+			"patterns": [
+				{
+					"name": "constant.character.escape.singlang",
+					"match": "\\\\."
+				}
+			]
+		},
+		"comments": {
+			"patterns": [
+				{
+					"name": "comment.line.double-slash",
+					"begin": "//",
+					"end": "$"
+				},
+				{
+					"name": "comment.block",
+					"begin": "/[*]",
+					"end": "[*]/",
+					"patterns": [
+						{
+							"name": "comment.block",
+							"begin": "/[*]",
+							"end": "[*]/",
+							"patterns": [
+								{
+									"name": "comment.block",
+									"begin": "/[*]",
+									"end": "[*]/"
+								}
+							]
+						}
+					]			
+				}
+			]	
+		}
+	},
+	"scopeName": "source.sing"
+}
