@@ -1,17 +1,14 @@
 {
-	"name": "mock-debug",
-	"displayName": "Mock Debug",
+	"name": "vscode-sing",
+	"displayName": "SingLang",
 	"version": "0.40.0",
-	"publisher": "andreweinand",
-	"description": "Starter extension for developing debug adapters for VS Code.",
+	"publisher": "mdegirolami",
+	"description": "Sing language plugin.",
 	"author": {
-		"name": "Microsoft Corporation",
-		"email": "aweinand@microsoft.com"
+		"name": "Maurizio De Girolami",
+		"email": "mdegirolami@gmail.com"
 	},
 	"license": "MIT",
-	"keywords": [
-		"multi-root ready"
-	],
 	"engines": {
 		"vscode": "^1.44.0"
 	},
@@ -20,13 +17,6 @@
 		"Debuggers"
 	],
 	"private": true,
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/Microsoft/vscode-mock-debug.git"
-	},
-	"bugs": {
-		"url": "https://github.com/Microsoft/vscode-mock-debug/issues"
-	},
 	"scripts": {
 		"prepublish": "tsc -p ./src",
 		"compile": "tsc -p ./src",
@@ -94,7 +84,7 @@
 		],
 		"breakpoints": [
 			{
-				"language": "markdown"
+				"language": "singlang"
 			}
 		],
 		"debuggers": [

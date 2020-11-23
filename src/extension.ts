@@ -118,15 +118,16 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('helloworld.helloWorld', () => {
 		// The code you place here will be executed every time your command is executed
 
-		var child = cp.execFile("C:/works/GitHub/sing/server/bin/ssrv_d.exe", ["arg1"],
-		function (error, stdout, stderr) {
-		  // This callback is invoked once the child terminates
-		  // You'd want to check err/stderr as well!
-		  vscode.window.showInformationMessage(stdout);
-		  });
+		var child = cp.execFile("C:/works/GitHub/sing/server/bin/ssrv_d.exe", ["arg1"]);
 
 		if (child.stdin != null) {
-		  	child.stdin.write("Hello my child!\n");
+			  child.stdin.write("Hello my child!\n");
+		}
+
+		if (child.stdout != null) {
+			child.stdout.on('data', (data) => {
+				vscode.window.showInformationMessage(data);
+			});
 		}
 
 		// Display a message box to the user
