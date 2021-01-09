@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
 import { MockDebugSession } from './mockDebug';
 import * as Net from 'net';
-import { SingCompletionItemProvider } from './completion';
+import { LanguageClient } from './language_client';
 
 /*
  * The compile time flag 'runMode' controls how the debug adapter is run.
@@ -22,14 +22,18 @@ const runMode: 'external' | 'server' | 'inline' = 'inline';
 */
 
 export const SING_MODE: vscode.DocumentFilter = { language: 'singlang', scheme: 'file' };
-let buildDiagnosticCollection: vscode.DiagnosticCollection;
+
+let language_client: LanguageClient;
 
 function registerLanguageFeatures(ctx: vscode.ExtensionContext)
 {
   //ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration((e) => watchLanguageServerConfiguration(e)));
 	//const config = parseLanguageServerConfig();
 
-	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(SING_MODE, new SingCompletionItemProvider(ctx.globalState), '.', '"'));
+	language_client = new LanguageClient(ctx);
+	ctx.subscriptions.push(language_client);
+	vscode.languages.registerCompletionItemProvider(SING_MODE, language_client, '.', '"');
+
 	// ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
 	// ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
 	// ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
@@ -44,11 +48,6 @@ function registerLanguageFeatures(ctx: vscode.ExtensionContext)
 	// );
 	// ctx.subscriptions.push(vscode.languages.registerTypeDefinitionProvider(GO_MODE, new GoTypeDefinitionProvider()));
 	// ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
-
-	// register diagnostic services (squiggles)
-	buildDiagnosticCollection = vscode.languages.createDiagnosticCollection('sing');
-	ctx.subscriptions.push(buildDiagnosticCollection);
-	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -118,7 +117,22 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('helloworld.helloWorld', () => {
 		// The code you place here will be executed every time your command is executed
 
-		var child = cp.execFile("C:/works/GitHub/sing/server/bin/ssrv_d.exe", ["arg1"]);
+		var child = cp.execFile("D:/Documents/w12/GitHub/stay/server/bin/ssrv_d.exe", ["arg1"]);
+
+		/*
+		var start = new Date().getTime();
+		if (child.stdin != null && child.stdout != null) {
+			for (var count = 1000; count > 0; ++count) {
+				child.stdin.write("Hello my child!\n");
+				let chunk = child.stdout.read();
+				if (chunk.size() != 16) {
+					break;
+				}
+			}
+		}
+		let delta = new Date().getTime() - start;
+		vscode.window.showInformationMessage(delta.toString());
+		*/
 
 		if (child.stdin != null) {
 			  child.stdin.write("Hello my child!\n");
@@ -242,40 +256,4 @@ class InlineDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory 
 	createDebugAdapterDescriptor(_session: vscode.DebugSession): ProviderResult<vscode.DebugAdapterDescriptor> {
 		return new vscode.DebugAdapterInlineImplementation(new MockDebugSession());
 	}
-}
-
-/*
-* Language programmatic features start
-*/
-function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
-	if (e.document.isUntitled) {
-		return;
-	}
-	if (e.document.languageId !== 'singlang') {
-		return;
-	}
-
-	buildDiagnosticCollection.clear();
-	//const diagnosticMap: Map<string, vscode.Diagnostic[]> = new Map(); // In case I have more uris
-	let diagnostics: vscode.Diagnostic[] = [];
-
-	let text = e.document.getText();
-	let pattern = /\b[A-Z]{2,}\b/g;
-	let problems = 0;
-	let m: RegExpExecArray | null;
-	while ((m = pattern.exec(text)) && problems < 10) {
-		problems++;
-		const error_range  : vscode.Range = new vscode.Range (
-			e.document.positionAt(m.index),
-			e.document.positionAt(m.index + m[0].length)
-		);
-		const diagnostic_item: vscode.Diagnostic = {
-			severity: vscode.DiagnosticSeverity.Warning,
-			range: error_range,
-			message: `${m[0]} is all uppercase.`,
-			source: 'ex'
-		};
-		diagnostics.push(diagnostic_item);
-	}
-	buildDiagnosticCollection.set(e.document.uri, diagnostics);
 }

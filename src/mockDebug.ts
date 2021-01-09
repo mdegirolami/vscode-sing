@@ -157,6 +157,11 @@ export class MockDebugSession extends LoggingDebugSession {
 		this._configurationDone.notify();
 	}
 
+	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
+		super.disconnectRequest(response, args);
+	}
+
+
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
 
 		// make sure to 'Stop' the buffered logging if 'trace' is not set
@@ -220,6 +225,8 @@ export class MockDebugSession extends LoggingDebugSession {
 		response.body = {
 			threads: [
 				new Thread(MockDebugSession.THREAD_ID, "thread 1")
+				//,
+				//new Thread(MockDebugSession.THREAD_ID + 1, "thread 2")
 			]
 		};
 		this.sendResponse(response);
