@@ -9,14 +9,35 @@
 			"include": "#strings"
 		},
 		{
-			"include": "#comments"
+			"include": "#literals"
+		},
+		{
+			"include": "#types"
+		},
+		{
+			"include": "#line_comments"
+		},
+		{
+			"include": "#block_comments"
 		}
 	],
 	"repository": {
 		"keywords": {
 			"patterns": [{
-				"name": "keyword.control.singlang",
-				"match": "\\b(null|true|false|void|mut|requires|namespace|var|let|const|type|map|weak|i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|c64|c128|int|float|string|bool|errcode|fn|pure|in|out|io|if|else|while|for|return|break|continue|run|bind|sizeof|dimof|as|typeswitch|switch|default|public|private|enum|struct|class|this|interface|static|implements|by|template|argument|volatile|throw|try|catch|step|case|flagset)\\b"
+				"match": "(\\b)(null|true|false|void|mut|requires|namespace|var|const|type|map|weak|i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|c64|c128|let|string|bool|fn|pure|in|out|io|if|else|while|for|return|break|continue|sizeof|case|typeswitch|switch|default|public|private|enum|class|this|interface|by|step|min|max|swap|alignas|alignof|and|and_eq|asm|atomic_cancel|atomic_commit|atomic_noexcept|auto|bitand|bitor|catch|char|char8_t|char16_t|char32_t|compl|concept|consteval|constexpr|constint|const_cast|co_await|co_return|co_yield|decltype|delete|do|double|dynamic_cast|explicit|export|extern|float|friend|goto|inline|int|long|mutable|new|noexcept|not|not_eq|nullptr|operator|or|or_eq|protected|reflexpr|register|reinterpret_cast|short|signed|static|static_assert|static_cast|struct|synchronized|template|thread_local|throw|try|typedef|typeid|typename|union|unsigned|using|virtual|volatile|wchar_t|xor|xor_eq|int8_t|int16_t|int32_t|int64_t|uint8_t|uint16_t|uint32_t|uint64_t)(\\b)",
+				"name": "keyword.control.singlang"
+			}]
+		},
+		"symbols": {
+			"patterns": [{
+				"name": "entity.name.function.singlang",
+				"match": "(\\b)[a-z_][A-Za-z0-9_]*(\\b)"
+			}]
+		},
+		"types": {
+			"patterns": [{
+				"name": "entity.name.type.singlang",
+				"match": "(\\b)[A-Z][A-Za-z0-9_]*(\\b)"
 			}]
 		},
 		"strings": {
@@ -30,33 +51,40 @@
 				}
 			]
 		},
-		"comments": {
+		"literals": {
+			"patterns": [
+				{
+					"name": "constant.language.singlang",
+					"match": "(\\b)[+-]?\\d+[\\d_]*(\\.[\\d_]+)?([eE][+-]?\\d+[\\d_]*)?(\\b)"
+				},
+				{
+					"name": "constant.language.singlang",
+					"match": "(\\b)0x[\\da-fA-F]+[\\da-fA-F_]*(\\b)"
+				}
+			]
+		},
+		"line_comments": {
 			"patterns": [
 				{
 					"name": "comment.line.double-slash",
 					"begin": "//",
 					"end": "$"
-				},
+				}
+			]
+		},
+		"block_comments": {
+			"patterns": [
 				{
 					"name": "comment.block",
 					"begin": "/[*]",
 					"end": "[*]/",
 					"patterns": [
 						{
-							"name": "comment.block",
-							"begin": "/[*]",
-							"end": "[*]/",
-							"patterns": [
-								{
-									"name": "comment.block",
-									"begin": "/[*]",
-									"end": "[*]/"
-								}
-							]
+							"include": "#block_comments"
 						}
-					]			
+					]
 				}
-			]	
+			]
 		}
 	},
 	"scopeName": "source.sing"
