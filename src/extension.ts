@@ -32,7 +32,7 @@ function registerLanguageFeatures(ctx: vscode.ExtensionContext)
 
 	language_client = new LanguageClient(ctx);
 	ctx.subscriptions.push(language_client);
-	vscode.languages.registerCompletionItemProvider(SING_MODE, language_client, '.', '"');
+	vscode.languages.registerCompletionItemProvider(SING_MODE, language_client, '.', '"', "/");
 
 	// ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
 	// ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));

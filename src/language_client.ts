@@ -22,10 +22,17 @@ export class LanguageClient implements vscode.CompletionItemProvider
 		"0", "1", "2", "3", "4", "5", "6", "7",
 		"8", "9", "A", "B", "C", "D", "E", "F"];
 
+	// auto completion
+	private competion_list : vscode.CompletionList;
+	private completion_callback;
+
 	constructor(ctx: vscode.ExtensionContext)
 	{
 		// init the server
-		this.server = cp.execFile("D:/Documents/w12/GitHub/stay/compiler/bin/sing.exe", ["-I", "./", "-s"]);
+		this.server = cp.execFile("../compiler/bin/sing.exe",
+			["-I", "sing_headers", "-I", "sing_bench", "-s"],
+			{cwd:"D:/Documents/w12/GitHub/stay/singlib"}
+		);
 		this.server.on('error', this.server_error.bind(this));
 		if (this.server.stdin != null && this.server.stdout != null) {
 			this.server.stdout.setEncoding('utf8');
@@ -324,7 +331,7 @@ export class LanguageClient implements vscode.CompletionItemProvider
 		while (data.length - done > 3) {
 			let parts : string[] = [];
 			done = this.splitArguments(parts, data, done);
-			if (parts.length < 2) {
+			if (parts.length < 1) {
 				continue;
 			}
 			switch (parts[0]) {
@@ -351,7 +358,17 @@ export class LanguageClient implements vscode.CompletionItemProvider
 					this.buildDiagnosticCollection.set(vscode.Uri.file(parts[1]), this.diagnostics);
 					this.diagnostics = [];
 					break;
-			}
+				case 'set_completion_item':
+					if (parts.length == 2 && this.competion_list != null) {
+						this.competion_list.items.push(new vscode.CompletionItem(parts[1]));
+					}
+					break;
+				case 'set_completions_done':
+					if (this.competion_list != null) {
+						this.completion_callback(this.competion_list);
+					}
+					break;
+				}
 		}
 		// vscode.window.showInformationMessage(data);
 	}
@@ -364,13 +381,23 @@ export class LanguageClient implements vscode.CompletionItemProvider
 	public provideCompletionItems(
 		document: vscode.TextDocument,
 		position: vscode.Position,
-		token: vscode.CancellationToken
-	): vscode.CompletionList {
-		var list = new vscode.CompletionList([], false);
-		list.items.push(new vscode.CompletionItem("uno"));
-		list.items.push(new vscode.CompletionItem("due"));
-		list.items.push(new vscode.CompletionItem("tre"));
-        return list;
+		token: vscode.CancellationToken,
+		context: vscode.CompletionContext
+	): vscode.ProviderResult<vscode.CompletionList> {
+		if (this.server_on) {
+			if (document != null && document.languageId == 'singlang') {
+				this.server.stdin?.write("completion_items " +
+				this.escapeString(document.fileName) + " " +
+				(position.line + 1).toString() + " " +
+				position.character.toString() + " " +	// not incremented: convert from insertion to trigger position.
+				context.triggerCharacter +
+				"\r\n");
+			}
+			this.competion_list = new vscode.CompletionList([], false);
+			return new Promise(this.completionWorker.bind(this));
+		} else {
+			return(null);
+		}
 	}
 
 	public resolveCompletionItem(
@@ -378,6 +405,11 @@ export class LanguageClient implements vscode.CompletionItemProvider
 		token: vscode.CancellationToken
 	): vscode.ProviderResult<vscode.CompletionItem> {
         return;
+	}
+
+	public completionWorker(resolve, reject)
+	{
+		this.completion_callback = resolve;
 	}
 
 }
