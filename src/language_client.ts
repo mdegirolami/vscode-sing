@@ -30,7 +30,7 @@ export class LanguageClient implements vscode.CompletionItemProvider
 	{
 		// init the server
 		this.server = cp.execFile("../compiler/bin/sing.exe",
-			["-I", "sing_headers", "-I", "sing_bench", "-s"],
+			["-I", "sing_headers", "-I", "sing_bench", "-I", "c:/", "-s"],
 			{cwd:"D:/Documents/w12/GitHub/stay/singlib"}
 		);
 		this.server.on('error', this.server_error.bind(this));
@@ -377,20 +377,20 @@ export class LanguageClient implements vscode.CompletionItemProvider
 	//  Completion Hints
 	/////////////////////
 
-	// completion hint for '.' and '"'
+	// completion hint for '.', "/", ":" and '"'
 	public provideCompletionItems(
 		document: vscode.TextDocument,
 		position: vscode.Position,
 		token: vscode.CancellationToken,
 		context: vscode.CompletionContext
 	): vscode.ProviderResult<vscode.CompletionList> {
-		if (this.server_on) {
+		if (this.server_on && context.triggerCharacter != null) {
 			if (document != null && document.languageId == 'singlang') {
 				this.server.stdin?.write("completion_items " +
 				this.escapeString(document.fileName) + " " +
 				(position.line + 1).toString() + " " +
 				position.character.toString() + " " +	// not incremented: convert from insertion to trigger position.
-				context.triggerCharacter +
+				this.escapeString(context.triggerCharacter) +
 				"\r\n");
 			}
 			this.competion_list = new vscode.CompletionList([], false);
