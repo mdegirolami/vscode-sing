@@ -7,7 +7,7 @@ class wrappedstring {
 	public data:string;
 }
 
-export class LanguageClient implements vscode.CompletionItemProvider
+export class LanguageClient implements vscode.CompletionItemProvider, vscode.SignatureHelpProvider
 {
 	// the server
 	private server: cp.ChildProcess;
@@ -25,6 +25,10 @@ export class LanguageClient implements vscode.CompletionItemProvider
 	// auto completion
 	private competion_list : vscode.CompletionList;
 	private completion_callback;
+
+	// signature help
+	private signature_help : vscode.SignatureHelp;
+	private signature_callback;
 
 	constructor(ctx: vscode.ExtensionContext)
 	{
@@ -335,41 +339,77 @@ export class LanguageClient implements vscode.CompletionItemProvider
 				continue;
 			}
 			switch (parts[0]) {
-				case 'set_error':
-					if (parts.length < 6) {
-						return;
-					}
-					let start_row = parseInt(parts[2], 10) - 1;
-					let start_col = parseInt(parts[3], 10) - 1;
-					let end_row = parseInt(parts[4], 10) - 1;
-					let end_col = parseInt(parts[5], 10) - 1;
-					let startpos: vscode.Position = new vscode.Position(start_row, start_col);
-					let endpos: vscode.Position = new vscode.Position(end_row, end_col);
-					const error_range  : vscode.Range = new vscode.Range (startpos, endpos);
-					const diagnostic_item: vscode.Diagnostic = {
-						severity: vscode.DiagnosticSeverity.Error,
-						range: error_range,
-						message: parts[1],
-						source: 'singlang'
-					};
-					this.diagnostics.push(diagnostic_item);
-					break;
-				case 'set_errors_done':
-					this.buildDiagnosticCollection.set(vscode.Uri.file(parts[1]), this.diagnostics);
-					this.diagnostics = [];
-					break;
-				case 'set_completion_item':
-					if (parts.length == 2 && this.competion_list != null) {
-						this.competion_list.items.push(new vscode.CompletionItem(parts[1]));
-					}
-					break;
-				case 'set_completions_done':
-					if (this.competion_list != null) {
-						this.completion_callback(this.competion_list);
-					}
-					break;
+			case 'set_error':
+				if (parts.length < 6) {
+					return;
 				}
+				let start_row = parseInt(parts[2], 10) - 1;
+				let start_col = parseInt(parts[3], 10) - 1;
+				let end_row = parseInt(parts[4], 10) - 1;
+				let end_col = parseInt(parts[5], 10) - 1;
+				let startpos: vscode.Position = new vscode.Position(start_row, start_col);
+				let endpos: vscode.Position = new vscode.Position(end_row, end_col);
+				const error_range  : vscode.Range = new vscode.Range (startpos, endpos);
+				const diagnostic_item: vscode.Diagnostic = {
+					severity: vscode.DiagnosticSeverity.Error,
+					range: error_range,
+					message: parts[1],
+					source: 'singlang'
+				};
+				this.diagnostics.push(diagnostic_item);
+				break;
+			case 'set_errors_done':
+				this.buildDiagnosticCollection.set(vscode.Uri.file(parts[1]), this.diagnostics);
+				this.diagnostics = [];
+				break;
+			case 'set_completion_item':
+				if (parts.length == 2 && this.competion_list != null) {
+					this.competion_list.items.push(new vscode.CompletionItem(parts[1]));
+				}
+				break;
+			case 'set_completions_done':
+				if (this.competion_list != null) {
+					this.completion_callback(this.competion_list);
+				}
+				break;
+			case 'set_signature':
+				if (parts.length == 3 && this.signature_help != null) {
+					this.signature_help.activeParameter = parseInt(parts[2], 10);
+					this.signature_help.activeSignature = 0;
+					if (parts[1] != "empty") {
+						let info = new vscode.SignatureInformation(parts[1]);
+						let level = 0;
+						var start = 0;
+						for (var i = 0; i < parts[1].length; i++) {
+							let char = parts[1].charAt(i);
+							if (char == '(') {
+								++level;
+								if (level == 1) {
+									start = i + 1;
+								}
+							} else if (char == ',' && level == 1) {
+								if (start != 0) {
+									info.parameters.push(new vscode.ParameterInformation([start, i - 1]));
+								}
+								start = i + 1;
+							} else if (char == ')') {
+								--level;
+								if (level == 0) {
+									if (start != 0) {
+										info.parameters.push(new vscode.ParameterInformation([start, i - 1]));
+									}
+									break;
+								}
+							}
+						}
+						this.signature_help.signatures.push(info);
+					}
+					this.signature_callback(this.signature_help);
+				}
+				break;
+			}
 		}
+		// for debug
 		// vscode.window.showInformationMessage(data);
 	}
 
@@ -412,4 +452,33 @@ export class LanguageClient implements vscode.CompletionItemProvider
 		this.completion_callback = resolve;
 	}
 
+	/////////////////////
+	//  Signature Hints
+	/////////////////////
+	public provideSignatureHelp(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		token: vscode.CancellationToken,
+		context: vscode.SignatureHelpContext): vscode.ProviderResult<vscode.SignatureHelp>
+	{
+		if (this.server_on && context.triggerCharacter != null) {
+			if (document != null && document.languageId == 'singlang') {
+				this.server.stdin?.write("signature " +
+				this.escapeString(document.fileName) + " " +
+				(position.line + 1).toString() + " " +
+				position.character.toString() + " " +	// not incremented: convert from insertion to trigger position.
+				this.escapeString(context.triggerCharacter) +
+				"\r\n");
+			}
+			this.signature_help = new vscode.SignatureHelp();
+			return new Promise(this.signatureWorker.bind(this));
+		} else {
+			return(null);
+		}
+	}
+
+	public signatureWorker(resolve, reject)
+	{
+		this.signature_callback = resolve;
+	}
 }
