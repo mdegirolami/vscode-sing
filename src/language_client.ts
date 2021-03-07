@@ -7,7 +7,9 @@ class wrappedstring {
 	public data:string;
 }
 
-export class LanguageClient implements vscode.CompletionItemProvider, vscode.SignatureHelpProvider
+export class LanguageClient implements vscode.CompletionItemProvider,
+										vscode.SignatureHelpProvider,
+										vscode.DefinitionProvider
 {
 	// the server
 	private server: cp.ChildProcess;
@@ -23,12 +25,16 @@ export class LanguageClient implements vscode.CompletionItemProvider, vscode.Sig
 		"8", "9", "A", "B", "C", "D", "E", "F"];
 
 	// auto completion
-	private competion_list : vscode.CompletionList;
+	private completion_list : vscode.CompletionList;
 	private completion_callback;
 
 	// signature help
 	private signature_help : vscode.SignatureHelp;
 	private signature_callback;
+
+	// find definitions
+	private def_locations : vscode.Location[];
+	private def_find_callback;
 
 	constructor(ctx: vscode.ExtensionContext)
 	{
@@ -182,6 +188,13 @@ export class LanguageClient implements vscode.CompletionItemProvider, vscode.Sig
 			output.push(newstring);
 		}
 		return(i);
+	}
+
+	public str2rowcol(argument : string) : number
+	{
+		let ret = parseInt(argument, 10) - 1;
+		if (ret < 0) ret = 0;
+		return(ret);
 	}
 
 	/////////////////////
@@ -343,10 +356,10 @@ export class LanguageClient implements vscode.CompletionItemProvider, vscode.Sig
 				if (parts.length < 6) {
 					return;
 				}
-				let start_row = parseInt(parts[2], 10) - 1;
-				let start_col = parseInt(parts[3], 10) - 1;
-				let end_row = parseInt(parts[4], 10) - 1;
-				let end_col = parseInt(parts[5], 10) - 1;
+				let start_row = this.str2rowcol(parts[2]);
+				let start_col = this.str2rowcol(parts[3]);
+				let end_row = this.str2rowcol(parts[4]);
+				let end_col = this.str2rowcol(parts[5]);
 				let startpos: vscode.Position = new vscode.Position(start_row, start_col);
 				let endpos: vscode.Position = new vscode.Position(end_row, end_col);
 				const error_range  : vscode.Range = new vscode.Range (startpos, endpos);
@@ -363,54 +376,68 @@ export class LanguageClient implements vscode.CompletionItemProvider, vscode.Sig
 				this.diagnostics = [];
 				break;
 			case 'set_completion_item':
-				if (parts.length == 2 && this.competion_list != null) {
-					this.competion_list.items.push(new vscode.CompletionItem(parts[1]));
+				if (parts.length == 2 && this.completion_list != null) {
+					this.completion_list.items.push(new vscode.CompletionItem(parts[1]));
 				}
 				break;
 			case 'set_completions_done':
-				if (this.competion_list != null) {
-					this.completion_callback(this.competion_list);
+				if (this.completion_list != null) {
+					this.completion_callback(this.completion_list);
 				}
 				break;
 			case 'set_signature':
 				if (parts.length == 3 && this.signature_help != null) {
 					this.signature_help.activeParameter = parseInt(parts[2], 10);
+					if (this.signature_help.activeParameter < 0) this.signature_help.activeParameter = 0;
 					this.signature_help.activeSignature = 0;
 					if (parts[1] != "empty") {
 						let info = new vscode.SignatureInformation(parts[1]);
-						let level = 0;
-						var start = 0;
-						for (var i = 0; i < parts[1].length; i++) {
-							let char = parts[1].charAt(i);
-							if (char == '(') {
-								++level;
-								if (level == 1) {
-									start = i + 1;
-								}
-							} else if (char == ',' && level == 1) {
-								if (start != 0) {
-									info.parameters.push(new vscode.ParameterInformation([start, i - 1]));
-								}
-								start = i + 1;
-							} else if (char == ')') {
-								--level;
-								if (level == 0) {
-									if (start != 0) {
-										info.parameters.push(new vscode.ParameterInformation([start, i - 1]));
-									}
-									break;
-								}
-							}
-						}
+						this.setSignatures(info, parts[1]);
 						this.signature_help.signatures.push(info);
 					}
 					this.signature_callback(this.signature_help);
+				}
+				break;
+			case 'definition_of':
+				if (parts.length == 4) {
+					let position = new vscode.Position(this.str2rowcol(parts[2]), this.str2rowcol(parts[3]));
+					let location = new vscode.Location(vscode.Uri.file(parts[1]), position);
+					this.def_locations.push(location);
+					this.def_find_callback(this.def_locations);
 				}
 				break;
 			}
 		}
 		// for debug
 		// vscode.window.showInformationMessage(data);
+	}
+
+	private setSignatures(info : vscode.SignatureInformation, signature : string)
+	{
+		let level = 0;
+		var start = 0;
+		for (var i = 0; i < signature.length; i++) {
+			let char = signature.charAt(i);
+			if (char == '(') {
+				++level;
+				if (level == 1) {
+					start = i + 1;
+				}
+			} else if (char == ',' && level == 1) {
+				if (start != 0) {
+					info.parameters.push(new vscode.ParameterInformation([start, i - 1]));
+				}
+				start = i + 1;
+			} else if (char == ')') {
+				--level;
+				if (level == 0) {
+					if (start != 0) {
+						info.parameters.push(new vscode.ParameterInformation([start, i - 1]));
+					}
+					break;
+				}
+			}
+		}
 	}
 
 	/////////////////////
@@ -427,17 +454,16 @@ export class LanguageClient implements vscode.CompletionItemProvider, vscode.Sig
 		if (this.server_on && context.triggerCharacter != null) {
 			if (document != null && document.languageId == 'singlang') {
 				this.server.stdin?.write("completion_items " +
-				this.escapeString(document.fileName) + " " +
-				(position.line + 1).toString() + " " +
-				position.character.toString() + " " +	// not incremented: convert from insertion to trigger position.
-				this.escapeString(context.triggerCharacter) +
-				"\r\n");
+					this.escapeString(document.fileName) + " " +
+					(position.line + 1).toString() + " " +
+					position.character.toString() + " " +	// not incremented: convert from insertion to trigger position.
+					this.escapeString(context.triggerCharacter) +
+					"\r\n");
+				this.completion_list = new vscode.CompletionList([], false);
+				return new Promise(this.completionWorker.bind(this));
 			}
-			this.competion_list = new vscode.CompletionList([], false);
-			return new Promise(this.completionWorker.bind(this));
-		} else {
-			return(null);
 		}
+		return(null);
 	}
 
 	public resolveCompletionItem(
@@ -464,21 +490,47 @@ export class LanguageClient implements vscode.CompletionItemProvider, vscode.Sig
 		if (this.server_on && context.triggerCharacter != null) {
 			if (document != null && document.languageId == 'singlang') {
 				this.server.stdin?.write("signature " +
-				this.escapeString(document.fileName) + " " +
-				(position.line + 1).toString() + " " +
-				position.character.toString() + " " +	// not incremented: convert from insertion to trigger position.
-				this.escapeString(context.triggerCharacter) +
-				"\r\n");
+					this.escapeString(document.fileName) + " " +
+					(position.line + 1).toString() + " " +
+					position.character.toString() + " " +	// not incremented: convert from insertion to trigger position.
+					this.escapeString(context.triggerCharacter) +
+					"\r\n");
+				this.signature_help = new vscode.SignatureHelp();
+				return new Promise(this.signatureWorker.bind(this));
 			}
-			this.signature_help = new vscode.SignatureHelp();
-			return new Promise(this.signatureWorker.bind(this));
-		} else {
-			return(null);
 		}
+		return(null);
 	}
 
 	public signatureWorker(resolve, reject)
 	{
 		this.signature_callback = resolve;
+	}
+
+	/////////////////////
+	//  Finding a symbol
+	/////////////////////
+	public provideDefinition(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		token: vscode.CancellationToken): vscode.ProviderResult<vscode.Definition | vscode.DefinitionLink[]>
+	{
+		if (this.server_on) {
+			if (document != null && document.languageId == 'singlang') {
+				this.server.stdin?.write("def_position " +
+					this.escapeString(document.fileName) + " " +
+					(position.line + 1).toString() + " " +
+					position.character.toString() +		// not incremented: convert from insertion to trigger position.
+					"\r\n");
+				this.def_locations = [];
+				return new Promise(this.defFindWorker.bind(this));
+			}
+		}
+		return(null);
+	}
+
+	public defFindWorker(resolve, reject)
+	{
+		this.def_find_callback = resolve;
 	}
 }

@@ -34,6 +34,8 @@ function registerLanguageFeatures(ctx: vscode.ExtensionContext)
 	ctx.subscriptions.push(language_client);
 	vscode.languages.registerCompletionItemProvider(SING_MODE, language_client, '.', '"', "/", ":");
 	vscode.languages.registerSignatureHelpProvider(SING_MODE, language_client, '(', ',');
+	vscode.languages.registerDefinitionProvider(SING_MODE, language_client);
+	//vscode.languages.registerDeclarationProvider(SING_MODE, language_client);
 
 	// ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
 	// ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
