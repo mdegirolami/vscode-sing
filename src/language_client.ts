@@ -400,9 +400,11 @@ export class LanguageClient implements vscode.CompletionItemProvider,
 				break;
 			case 'definition_of':
 				if (parts.length == 4) {
-					let position = new vscode.Position(this.str2rowcol(parts[2]), this.str2rowcol(parts[3]));
-					let location = new vscode.Location(vscode.Uri.file(parts[1]), position);
-					this.def_locations.push(location);
+					if (parts[1] != "empty") {
+						let position = new vscode.Position(this.str2rowcol(parts[2]) + 1, this.str2rowcol(parts[3]) + 1);
+						let location = new vscode.Location(vscode.Uri.file(parts[1]), position);
+						this.def_locations.push(location);
+					}
 					this.def_find_callback(this.def_locations);
 				}
 				break;
