@@ -9,7 +9,8 @@ class wrappedstring {
 
 export class LanguageClient implements vscode.CompletionItemProvider,
 										vscode.SignatureHelpProvider,
-										vscode.DefinitionProvider
+										vscode.DefinitionProvider,
+										vscode.DocumentSymbolProvider
 {
 	// the server
 	private server: cp.ChildProcess;
@@ -35,6 +36,11 @@ export class LanguageClient implements vscode.CompletionItemProvider,
 	// find definitions
 	private def_locations : vscode.Location[];
 	private def_find_callback;
+
+	// list all symbols
+	private all_symbols : vscode.SymbolInformation[];
+	private all_symbols_file : vscode.Uri;
+	private all_symbols_callback;
 
 	constructor(ctx: vscode.ExtensionContext)
 	{
@@ -408,6 +414,20 @@ export class LanguageClient implements vscode.CompletionItemProvider,
 					this.def_find_callback(this.def_locations);
 				}
 				break;
+			case 'set_symbol':
+				if (parts.length == 5) {
+					let row = this.str2rowcol(parts[3]) + 1;
+					let col = this.str2rowcol(parts[4]) + 1;
+					var location = new vscode.Location(this.all_symbols_file, new vscode.Position(row, col));
+					var nfo = new vscode.SymbolInformation(parts[1], parseInt(parts[2], 10), "", location);
+					this.all_symbols.push(nfo);
+				}
+				break;
+			case 'set_symbols_done':
+				if (this.all_symbols != null) {
+					this.all_symbols_callback(this.all_symbols);
+				}
+				break;
 			}
 		}
 		// for debug
@@ -455,13 +475,13 @@ export class LanguageClient implements vscode.CompletionItemProvider,
 	): vscode.ProviderResult<vscode.CompletionList> {
 		if (this.server_on && context.triggerCharacter != null) {
 			if (document != null && document.languageId == 'singlang') {
+				this.completion_list = new vscode.CompletionList([], false);
 				this.server.stdin?.write("completion_items " +
 					this.escapeString(document.fileName) + " " +
 					(position.line + 1).toString() + " " +
 					position.character.toString() + " " +	// not incremented: convert from insertion to trigger position.
 					this.escapeString(context.triggerCharacter) +
 					"\r\n");
-				this.completion_list = new vscode.CompletionList([], false);
 				return new Promise(this.completionWorker.bind(this));
 			}
 		}
@@ -491,13 +511,13 @@ export class LanguageClient implements vscode.CompletionItemProvider,
 	{
 		if (this.server_on && context.triggerCharacter != null) {
 			if (document != null && document.languageId == 'singlang') {
+				this.signature_help = new vscode.SignatureHelp();
 				this.server.stdin?.write("signature " +
 					this.escapeString(document.fileName) + " " +
 					(position.line + 1).toString() + " " +
 					position.character.toString() + " " +	// not incremented: convert from insertion to trigger position.
 					this.escapeString(context.triggerCharacter) +
 					"\r\n");
-				this.signature_help = new vscode.SignatureHelp();
 				return new Promise(this.signatureWorker.bind(this));
 			}
 		}
@@ -519,12 +539,12 @@ export class LanguageClient implements vscode.CompletionItemProvider,
 	{
 		if (this.server_on) {
 			if (document != null && document.languageId == 'singlang') {
+				this.def_locations = [];
 				this.server.stdin?.write("def_position " +
 					this.escapeString(document.fileName) + " " +
 					(position.line + 1).toString() + " " +
 					position.character.toString() +		// not incremented: convert from insertion to trigger position.
 					"\r\n");
-				this.def_locations = [];
 				return new Promise(this.defFindWorker.bind(this));
 			}
 		}
@@ -534,5 +554,29 @@ export class LanguageClient implements vscode.CompletionItemProvider,
 	public defFindWorker(resolve, reject)
 	{
 		this.def_find_callback = resolve;
+	}
+
+	/////////////////////
+	//  Symbol provider
+	/////////////////////
+	public provideDocumentSymbols(
+		document: vscode.TextDocument,
+		token: vscode.CancellationToken): vscode.ProviderResult<vscode.SymbolInformation[] | vscode.DocumentSymbol[]>
+	{
+		if (this.server_on) {
+			if (document != null && document.languageId == 'singlang') {
+				this.all_symbols = [];
+				this.all_symbols_file = vscode.Uri.file(document.fileName);
+				this.server.stdin?.write("get_symbols " +
+					this.escapeString(document.fileName) + "\r\n");
+				return new Promise(this.allSymbolsWorker.bind(this));
+			}
+		}
+		return(null);
+	}
+
+	public allSymbolsWorker(resolve, reject)
+	{
+		this.all_symbols_callback = resolve;
 	}
 }
