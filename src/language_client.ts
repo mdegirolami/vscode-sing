@@ -2,6 +2,8 @@
 
 import cp = require('child_process');
 import vscode = require('vscode');
+import os = require('os');
+const fs = require('fs');
 
 class wrappedstring {
 	public data:string;
@@ -44,11 +46,39 @@ export class LanguageClient implements vscode.CompletionItemProvider,
 
 	constructor(ctx: vscode.ExtensionContext)
 	{
-		// init the server
-		this.server = cp.execFile("../compiler/bin/sing.exe",
-			["-I", "sing_headers", "-I", "sing_bench", "-I", "c:/", "-s"],
-			{cwd:"D:/Documents/w12/GitHub/stay/singlib"}
-		);
+		// collect some filenames from sdk
+		var hh_path = "sdk/sing_headers";
+		var srv_path = "";
+		if (os.platform() == 'win32') {
+			srv_path = "sdk/win/bin/sing";
+		} else {
+			srv_path = "sdk/linux/bin/sing";
+		}
+		srv_path = ctx.asAbsolutePath(srv_path);
+		hh_path = ctx.asAbsolutePath(hh_path);
+
+		// workspace directory
+		var work_folders = vscode.workspace.workspaceFolders;
+		if (work_folders == null) {
+			this.server_on = false;
+			return;
+		}
+		var workpath = work_folders[0].uri.fsPath;
+
+		// collect include dirs for intellisense
+		var srv_arguments : string[] = ["-s", "-I", hh_path];
+
+		var linefun = function(line : string) {
+			if (line != "") {
+				srv_arguments.push("-I");
+				srv_arguments.push(workpath + "/" + line);
+			}
+		}
+		require('fs').readFileSync(workpath + "/.vscode/sing_sense.txt", 'utf-8').split(/\r?\n/).forEach(linefun);
+
+		// run it !!
+		this.server = cp.execFile(srv_path, srv_arguments, {cwd:workpath});
+
 		this.server.on('error', this.server_error.bind(this));
 		if (this.server.stdin != null && this.server.stdout != null) {
 			this.server.stdout.setEncoding('utf8');
