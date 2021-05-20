@@ -55,7 +55,7 @@
 		"onDebug",
 		"onDebugDynamicConfigurations",
 		"onCommand:extension.mock-debug.getProgramName",
-		"onCommand:helloworld.helloWorld"
+		"onCommand:extension.vscode-sing.update"
 	],
 	"contributes": {
 		"languages": [
@@ -79,8 +79,8 @@
 		],
 		"commands": [
 			{
-				"command": "helloworld.helloWorld",
-				"title": "Hello Degi World"
+				"command": "extension.vscode-sing.update",
+				"title": "sing: update project"
 			}
 		],
 		"breakpoints": [

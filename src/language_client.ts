@@ -3,7 +3,6 @@
 import cp = require('child_process');
 import vscode = require('vscode');
 import os = require('os');
-const fs = require('fs');
 
 class wrappedstring {
 	public data:string;

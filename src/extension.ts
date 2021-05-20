@@ -5,6 +5,7 @@
 'use strict';
 
 import cp = require('child_process');
+import os = require('os');
 import * as vscode from 'vscode';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
 import { MockDebugSession } from './mockDebug';
@@ -119,25 +120,11 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 
 	// test command
+	/*
 	context.subscriptions.push(vscode.commands.registerCommand('helloworld.helloWorld', () => {
 		// The code you place here will be executed every time your command is executed
 
 		var child = cp.execFile("D:/Documents/w12/GitHub/stay/server/bin/ssrv_d.exe", ["arg1"]);
-
-		/*
-		var start = new Date().getTime();
-		if (child.stdin != null && child.stdout != null) {
-			for (var count = 1000; count > 0; ++count) {
-				child.stdin.write("Hello my child!\n");
-				let chunk = child.stdout.read();
-				if (chunk.size() != 16) {
-					break;
-				}
-			}
-		}
-		let delta = new Date().getTime() - start;
-		vscode.window.showInformationMessage(delta.toString());
-		*/
 
 		if (child.stdin != null) {
 			  child.stdin.write("Hello my child!\n");
@@ -148,9 +135,32 @@ export function activate(context: vscode.ExtensionContext) {
 				vscode.window.showInformationMessage(data);
 			});
 		}
+	}));
+	*/
 
-		// Display a message box to the user
-		//vscode.window.showInformationMessage('Hello World from Degi\'s HelloWorld!');
+	// test command
+	context.subscriptions.push(vscode.commands.registerCommand('extension.vscode-sing.update', () => {
+
+		// The code you place here will be executed every time your command is executed
+		var updater_path = "";
+		if (os.platform() == 'win32') {
+			updater_path = "sdk/win/bin/updater";
+		} else {
+			updater_path = "sdk/linux/bin/updater";
+		}
+		updater_path = context.asAbsolutePath(updater_path);
+		var work_folders = vscode.workspace.workspaceFolders;
+		if (work_folders != null) {
+			cp.execFile(updater_path, [work_folders[0].uri.fsPath, context.asAbsolutePath("sdk")],
+				(err, stdout, stderr) => {
+					if (err) {
+						vscode.window.showInformationMessage("Update: " + err);
+					} else {
+						vscode.window.showInformationMessage("Update: " + stdout);
+					}
+			  	}
+			);
+		}
 	}));
 
 	/*

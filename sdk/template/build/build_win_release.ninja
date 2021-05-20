@@ -5,6 +5,6 @@ ln_extra_libs = -lws2_32
 platform = win
 cfg = release
 
-bin_target = ../../bin/win/updater.exe
+bin_target = ../../bin/win/<PHOLD>
 
 include ../build_aux.ninja

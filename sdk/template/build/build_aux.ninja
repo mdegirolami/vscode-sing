@@ -37,10 +37,10 @@ rule aa
 # sing->temp
 build $temp/hello_world.h | $temp/hello_world.cpp : sc $sing/hello_world.sing
 
-# temp -> obj
+# temp->obj
 build hello_world.o : cc $temp/hello_world.cpp
 
-# cpp -> obj
+# cpp->obj
 build main.o : cc $cpp/main.cpp
 
 #link
