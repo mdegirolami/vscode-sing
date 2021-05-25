@@ -73,7 +73,12 @@ export class LanguageClient implements vscode.CompletionItemProvider,
 				srv_arguments.push(workpath + "/" + line);
 			}
 		}
-		require('fs').readFileSync(workpath + "/.vscode/sing_sense.txt", 'utf-8').split(/\r?\n/).forEach(linefun);
+		var file_content: string;
+		try {
+			file_content = require('fs').readFileSync(workpath + "/.vscode/sing_sense.txt", 'utf-8');
+			file_content.split(/\r?\n/).forEach(linefun);
+		} catch (err) {
+		}
 
 		// run it !!
 		this.server = cp.execFile(srv_path, srv_arguments, {cwd:workpath});
