@@ -27,17 +27,20 @@
 		"publish": "vsce publish"
 	},
 	"dependencies": {
+		"child_process": "*",
+		"os": "*",
+		"@types/vscode": "*",
+		"fs": "*"
+	},
+	"devDependencies": {
 		"@types/jest": "^26.0.7",
 		"await-notify": "1.0.1",
 		"line-reader": "^0.4.0",
 		"net": "^1.0.2",
-		"vscode-debugadapter": "^1.40.0"
-	},
-	"devDependencies": {
+		"vscode-debugadapter": "^1.40.0",
 		"@types/glob": "^7.1.1",
 		"@types/mocha": "^7.0.2",
 		"@types/node": "^13.11.0",
-		"@types/vscode": "^1.44.0",
 		"@typescript-eslint/eslint-plugin": "^2.26.0",
 		"@typescript-eslint/parser": "^2.26.0",
 		"eslint": "^6.8.0",
@@ -52,9 +55,6 @@
 	"main": "./out/extension",
 	"activationEvents": [
 		"onLanguage:singlang",
-		"onDebug",
-		"onDebugDynamicConfigurations",
-		"onCommand:extension.mock-debug.getProgramName",
 		"onCommand:extension.vscode-sing.update"
 	],
 	"contributes": {
@@ -81,68 +81,6 @@
 			{
 				"command": "extension.vscode-sing.update",
 				"title": "sing: update project"
-			}
-		],
-		"breakpoints": [
-			{
-				"language": "singlang"
-			}
-		],
-		"debuggers": [
-			{
-				"type": "mock",
-				"label": "Mock Debug",
-				"program": "./out/debugAdapter.js",
-				"runtime": "node",
-				"configurationAttributes": {
-					"launch": {
-						"required": [
-							"program"
-						],
-						"properties": {
-							"program": {
-								"type": "string",
-								"description": "Absolute path to a text file.",
-								"default": "${workspaceFolder}/${command:AskForProgramName}"
-							},
-							"stopOnEntry": {
-								"type": "boolean",
-								"description": "Automatically stop after launch.",
-								"default": true
-							},
-							"trace": {
-								"type": "boolean",
-								"description": "Enable logging of the Debug Adapter Protocol.",
-								"default": true
-							}
-						}
-					}
-				},
-				"initialConfigurations": [
-					{
-						"type": "mock",
-						"request": "launch",
-						"name": "Ask for file name",
-						"program": "${workspaceFolder}/${command:AskForProgramName}",
-						"stopOnEntry": true
-					}
-				],
-				"configurationSnippets": [
-					{
-						"label": "Mock Debug: Launch",
-						"description": "A new configuration for 'debugging' a user selected markdown file.",
-						"body": {
-							"type": "mock",
-							"request": "launch",
-							"name": "Ask for file name",
-							"program": "^\"\\${workspaceFolder}/\\${command:AskForProgramName}\"",
-							"stopOnEntry": true
-						}
-					}
-				],
-				"variables": {
-					"AskForProgramName": "extension.mock-debug.getProgramName"
-				}
 			}
 		]
 	}
