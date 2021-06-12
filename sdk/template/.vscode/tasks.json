@@ -57,7 +57,7 @@
             "type": "shell",
             "label": "clean release",
 
-            "command": "C:\\MinGW\\bin\\ninja.exe",
+            "command": "ninja",
             "windows": {
                 "args": ["-v", "-f", "../build_win_release.ninja", "-t", "clean"],
             },
@@ -68,7 +68,7 @@
                 "clear": true 
             },
             "options": {
-                "cwd": "${workspaceFolder}\\build\\obj_r"
+                "cwd": "${workspaceFolder}/build/obj_r"
             },
             "problemMatcher": [
                 "$gcc"
@@ -82,7 +82,7 @@
             "type": "shell",
             "label": "clean debug",
 
-            "command": "C:\\MinGW\\bin\\ninja.exe",
+            "command": ninja",
             "windows": {
                 "args": ["-v", "-f", "../build_win_debug.ninja", "-t", "clean"],
             },
@@ -93,7 +93,7 @@
                 "clear": true 
             },
             "options": {
-                "cwd": "${workspaceFolder}\\build\\obj_d"
+                "cwd": "${workspaceFolder}/build/obj_d"
             },
             "problemMatcher": [
                 "$gcc"

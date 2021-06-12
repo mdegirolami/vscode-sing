@@ -2,7 +2,7 @@
 	"name": "vscode-sing",
 	"displayName": "SingLang",
 	"version": "0.40.0",
-	"publisher": "mdegirolami",
+	"publisher": "MaurizioDeGirolami",
 	"description": "Sing language plugin.",
 	"author": {
 		"name": "Maurizio De Girolami",
@@ -14,9 +14,19 @@
 	},
 	"icon": "images/sing.png",
 	"categories": [
-		"Debuggers"
+		"Programming Languages", "Language Packs"
 	],
+	"keywords": [
+	],
+	"preview": true,
 	"private": false,
+	"repository": {
+	"type": "git",
+		"url": "https://github.com/mdegirolami/vscode-sing"
+	},
+	"bugs": {
+		"url": "https://github.com/mdegirolami/vscode-sing/issues"
+	},
 	"scripts": {
 		"prepublish": "tsc -p ./src",
 		"compile": "tsc -p ./src",
