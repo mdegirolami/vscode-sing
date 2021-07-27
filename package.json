@@ -4,24 +4,20 @@
 	"version": "0.40.0",
 	"publisher": "MaurizioDeGirolami",
 	"description": "Sing language plugin.",
-	"author": {
-		"name": "Maurizio De Girolami",
-		"email": "mdegirolami@gmail.com"
-	},
 	"license": "MIT",
 	"engines": {
 		"vscode": "^1.44.0"
 	},
 	"icon": "images/sing.png",
 	"categories": [
-		"Programming Languages", "Language Packs"
+		"Programming Languages",
+		"Language Packs"
 	],
-	"keywords": [
-	],
+	"keywords": [],
 	"preview": true,
 	"private": false,
 	"repository": {
-	"type": "git",
+		"type": "git",
 		"url": "https://github.com/mdegirolami/vscode-sing"
 	},
 	"bugs": {
@@ -37,10 +33,10 @@
 		"publish": "vsce publish"
 	},
 	"dependencies": {
+		"@types/vscode": "^1.57.0",
 		"child_process": "*",
-		"os": "*",
-		"@types/vscode": "*",
-		"fs": "*"
+		"fs": "*",
+		"os": "*"
 	},
 	"devDependencies": {
 		"@types/jest": "^26.0.7",
