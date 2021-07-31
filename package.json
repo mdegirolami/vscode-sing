@@ -6,7 +6,7 @@
 	"description": "Sing language plugin.",
 	"license": "MIT",
 	"engines": {
-		"vscode": "^1.44.0"
+		"vscode": "^1.44.2"
 	},
 	"icon": "images/sing.png",
 	"categories": [
