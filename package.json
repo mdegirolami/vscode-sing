@@ -1,12 +1,12 @@
 {
 	"name": "vscode-sing",
 	"displayName": "SingLang",
-	"version": "0.40.1",
+	"version": "0.40.2",
 	"publisher": "MaurizioDeGirolami",
 	"description": "Sing language plugin.",
 	"license": "MIT",
 	"engines": {
-		"vscode": "^1.44.2"
+		"vscode": "^1.44.0"
 	},
 	"icon": "images/sing.png",
 	"categories": [
